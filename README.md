@@ -15,17 +15,17 @@ This project compares fine motor muscle memory acquisition in a Virtual Reality 
 ## Videos
 | Video | Link |
 |---|---|
-| Project Status Video (3-5 min) | [ADD YOUTUBE LINK HERE] |
-| Code Walkthrough Video (3-5 min) | [ADD YOUTUBE LINK HERE] |
-| Prototype Demo Video (EC) | [ADD YOUTUBE LINK HERE] |
+| Project Status Video | [https://youtu.be/ed8gBA4PqR8)] |
+| Code Walkthrough Video |(https://youtu.be/7x17UYl6q-E)] |
+| Prototype Demo Video | [(https://youtu.be/b3ethq8zt3c)] |
 
 ---
 
 ## Documents
 | Document | Link |
 |---|---|
-| Paper (PDF) |
-| Project Proposal | 
+| Checkpoint 1 Paper | [465Checkpoint1](https://github.com/csu-hci-projects/SP26-Tactile-VR/blob/main/Papers/465Checkpoint1%20(1).pdf) |
+| Project Proposal | [Project Proposal](https://github.com/csu-hci-projects/SP26-Tactile-VR/blob/main/Papers/465_project_proposal%20(2).pdf) |
 
 ---
 
