@@ -32,7 +32,7 @@ public class DrawingManager : MonoBehaviour
     private int incorrectCount = 0;
     private float totalTime = 0f;
 
-    private string csvPath = @"C:\Users\RLNel\Documents\Spring2026\prototype\Assets\scripts\Data.csv";
+    private string csvPath = @"C:\Users\RLNel\Documents\Spring2026\SP26-Tactile-VR\prototype\Assets\scripts\Data.csv";
 
     private string[] correctPattern = new string[]
     {
