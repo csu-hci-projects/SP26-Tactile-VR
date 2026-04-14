@@ -24,8 +24,8 @@ This project compares fine motor muscle memory acquisition in a Virtual Reality 
 ## Documents
 | Document | Link |
 |---|---|
-| Paper (PDF) |
-| Project Proposal | 
+| Paper (PDF) | [Checkpoint 1](465Checkpoint1%20(1).pdf) |
+| Proposal (PDF) | [Project Proposal](465_project_proposal%20(2).pdf) |
 
 ---
 
