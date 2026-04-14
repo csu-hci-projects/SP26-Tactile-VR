@@ -24,8 +24,6 @@ This project compares fine motor muscle memory acquisition in a Virtual Reality 
 ## Documents
 | Document | Link |
 |---|---|
-| Document | Link |
-|---|---|
 | Checkpoint 1 Paper | [465Checkpoint1](https://github.com/csu-hci-projects/SP26-Tactile-VR/blob/main/Papers/465Checkpoint1%20(1).pdf) |
 | Project Proposal | [Project Proposal](https://github.com/csu-hci-projects/SP26-Tactile-VR/blob/main/Papers/465_project_proposal%20(2).pdf) |
 
