@@ -22,10 +22,10 @@ This project compares fine motor muscle memory acquisition in a Virtual Reality 
 ---
 
 ## Documents
-| Document | Link |
+| Document | Link | Overleaf|
 |---|---|
-| Checkpoint 1 Paper | [465Checkpoint1](https://github.com/csu-hci-projects/SP26-Tactile-VR/blob/main/Papers/465Checkpoint1%20(1).pdf) |
-| Project Proposal | [Project Proposal](https://github.com/csu-hci-projects/SP26-Tactile-VR/blob/main/Papers/465_project_proposal%20(2).pdf) |
+| Checkpoint 1 Paper | [465Checkpoint1](https://github.com/csu-hci-projects/SP26-Tactile-VR/blob/main/Papers/465Checkpoint1%20(1).pdf) | https://www.overleaf.com/project/69dc964f7d0d6aa7086b3028|
+| Project Proposal | [Project Proposal](https://github.com/csu-hci-projects/SP26-Tactile-VR/blob/main/Papers/465_project_proposal%20(2).pdf) |https://www.overleaf.com/project/699585d76a6b4b9e39014128|
 
 ---
 
