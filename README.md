@@ -15,9 +15,9 @@ This project compares fine motor muscle memory acquisition in a Virtual Reality 
 ## Videos
 | Video | Link |
 |---|---|
-| Project Status Video (3-5 min) | [ADD YOUTUBE LINK HERE] |
-| Code Walkthrough Video (3-5 min) | [ADD YOUTUBE LINK HERE] |
-| Prototype Demo Video (EC) | [ADD YOUTUBE LINK HERE] |
+| Project Status Video | [ADD YOUTUBE LINK HERE] |
+| Code Walkthrough Video | [ADD YOUTUBE LINK HERE] |
+| Prototype Demo Video | [ADD YOUTUBE LINK HERE] |
 
 ---
 
