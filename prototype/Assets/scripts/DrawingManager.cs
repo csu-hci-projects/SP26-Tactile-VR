@@ -235,6 +235,9 @@ public class DrawingManager : MonoBehaviour
 
     void CheckPattern()
     {
+        // Don't check if player hasn't touched any dots yet
+        if (visitedDots.Count == 0) return;
+
         bool correct = false;
 
         if (visitedDots.Count == correctPattern.Length)
