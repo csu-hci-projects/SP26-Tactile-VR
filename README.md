@@ -19,8 +19,8 @@ This project compares fine motor muscle memory acquisition in a Virtual Reality 
 | Checkpoint 1 Code Walkthrough Video |https://youtu.be/7x17UYl6q-E |
 | Checkpoint 1 Prototype Demo  | https://youtu.be/b3ethq8zt3c |
 | Experiment intro | https://youtu.be/cSLje0Vdagk|
-| checkpoint 2 demo | |
-| checkpoint 2 project status |
+| checkpoint 2 progress |https://youtu.be/H43r5BNT9P4|
+| checkpoint 2 prototype status | https://youtu.be/PrH6-0a9jYE |
 ---
 
 ## Documents
