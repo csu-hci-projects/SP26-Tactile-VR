@@ -12,6 +12,12 @@ This project compares fine motor muscle memory acquisition in a Virtual Reality 
 
 ---
 
+## GitHub link
+
+https://github.com/csu-hci-projects/SP26-Tactile-VR/tree/main
+
+---
+
 ## Videos
 | Video | Link |
 |---|---|
