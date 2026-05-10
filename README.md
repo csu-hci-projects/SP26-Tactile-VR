@@ -28,7 +28,8 @@ https://github.com/csu-hci-projects/SP26-Tactile-VR/tree/main
 | checkpoint 2 progress |https://youtu.be/H43r5BNT9P4|
 | checkpoint 2 prototype status | https://youtu.be/PrH6-0a9jYE |
 | Study Overview Video | https://youtu.be/jHFS_K_zFYM|
-| Final Presentation | https://youtu.be/57tMdhFPBZs |
+| Final Presentation | https://youtu.be/D8ggc_9rFKE | 
+| Final Code Review | https://youtu.be/6nyG2_LMsVw |
 ---
 
 ## Documents
@@ -57,9 +58,9 @@ The VR prototype is built in Unity and deployed on a Meta Quest 3. Key features 
 
 ## How to Run
 1. Open project in Unity 6
-2. Open `SampleScene`
-3. Build and deploy to Meta Quest 3 via Android Build Settings
-4. Or run in editor with Quest connected via Meta Link
+2. Open `ControllerDemo` in Scenes under assets
+3. Make sure headset is connected via link
+4. press play at the top and follow the directions given. It should walk you through the full process. 
 
 ---
 
