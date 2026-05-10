@@ -28,6 +28,7 @@ https://github.com/csu-hci-projects/SP26-Tactile-VR/tree/main
 | checkpoint 2 progress |https://youtu.be/H43r5BNT9P4|
 | checkpoint 2 prototype status | https://youtu.be/PrH6-0a9jYE |
 | Study Overview Video | https://youtu.be/jHFS_K_zFYM|
+| Final Presentation | https://youtu.be/57tMdhFPBZs |
 ---
 
 ## Documents
