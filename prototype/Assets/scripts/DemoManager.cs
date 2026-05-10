@@ -5,111 +5,138 @@ using TMPro;
 using System.Collections;
 using System.Collections.Generic;
 
-/// <summary>
-/// VR Tutorial Demo Scene.
-/// Participant controls ALL flow - no auto-advancing timers.
+
+/// Manages the VR tutorial scene 
 ///
-/// Flow:
-///   Phase 1 - Movement + Hover:
-///             Button visible. Hover it, then click it to proceed.
+/// Guides participants through four phases before entering the main experiment:
+///   Phase 1 - Movement and Hover:
+///             Teaches the participant to move around and aim the ray controller.
+///             A button is visible hover it, then click it to proceed.
 ///
 ///   Phase 2 - Dot Practice:
-///             Button hidden. Connect any two dots to proceed.
+///             Button is hidden. Participant selects one dot and drags to another
+///             to practice the connection mechanic.
 ///
 ///   Phase 3 - Full Pattern:
-///             Button hidden. Connect all dots to proceed.
+///             Button is hidden. Participant connects all dots in sequence,
+///             closing the loop to complete the pattern.
 ///
 ///   Phase 4 - Begin Experiment:
-///             Button visible labeled "Begin Experiment".
-///             Dots reset after each successful pattern — practice as many
-///             times as desired. Click the button to load the experiment.
+///             Button reappears labeled "Begin Experiment". Participant may
+///             practice the full pattern as many times as desired before
+///             clicking the button to load the experiment scene.
 ///
-/// TO ADD AUDIO LATER:
-///   Drag AudioClip assets into Inspector slots. No code changes needed.
-///   Audio plays 30 seconds after each phase begins.
-/// </summary>
+///  also allows for audio to be used for accessability 
 public class DemoManager : MonoBehaviour
 {
     [Header("Controller")]
+    // The Transform of the right-hand VR controller, used to cast the aim ray
     public Transform controllerTransform;
 
     [Header("The Button")]
+    // The button GameObject that participants hover and click
     public GameObject theButton;
+    // The TextMeshPro label on the button (e.g. "Hover Here!" or "Begin Experiment")
     public TMP_Text buttonLabel;
+    // Button colors for its three states: idle, hovered, and clicked
     public Color buttonDefaultColor = Color.white;
     public Color buttonHoverColor = Color.red;
     public Color buttonClickedColor = Color.green;
 
     [Header("Perimeter Dots (8 dots clockwise)")]
+    // Array of all dot GameObjects arranged around the whiteboard perimeter
     public GameObject[] perimeterDots;
+    // Material used to render the lines drawn between dots
     public Material lineMaterial;
+    // Dot colors for each interaction state
     public Color dotDefaultColor = Color.black;
     public Color dotHoverColor = Color.red;
     public Color dotSelectedColor = Color.yellow;
     public Color dotCompleteColor = Color.green;
 
     [Header("Instruction Display")]
+    // The TextMeshPro text element that shows on-screen instructions to the participant
     public TMP_Text instructionDisplay;
 
     [Header("Experiment Scene")]
+    // Name of the Unity scene to load when the participant clicks "Begin Experiment"
     public string experimentSceneName = "SampleScene";
 
     [Header("Audio - drag clips in later, no code changes needed")]
+    // Optional audio clips that play at the start of each phase
     public AudioClip phase1Audio;
     public AudioClip phase2Audio;
     public AudioClip phase3Audio;
     public AudioClip phase4Audio;
     [Tooltip("Delay in seconds before audio plays after each phase begins.")]
     public float audioDelay = 0.01f;
+    // AudioSource component added at runtime to play the clips
     private AudioSource audioSource;
 
-    // Phases
+
+
+    // Defines the four tutorial phases in order
     private enum Phase { Phase1_MovementAndHover, Phase2_DotPractice, Phase3_FullPattern, Phase4_Begin }
+    // Tracks which phase the participant is currently in
     private Phase currentPhase = Phase.Phase1_MovementAndHover;
 
-    // Input
+
+    // The detected right-hand XR input device
     private InputDevice rightDevice;
+    // Prevents repeated trigger actions from a single button hold
     private bool isTriggerHeld = false;
+    // Tracks whether the ray was hovering the button last frame (for Phase 1 instruction changes)
     private bool wasHoveringButton = false;
 
-    // Materials (cached instances so color changes always work)
+    // Cached instance material for the button — allows runtime color changes
     private Material buttonMat;
+    // Cached instance materials for each dot keyed by GameObject
     private Dictionary<GameObject, Material> dotMats = new Dictionary<GameObject, Material>();
 
-    // Dot state
+    // ── Dot Drawing State ──────────────────────────────────────────────────
+
+    // The dot currently selected (held) by the participant
     private GameObject currentDot = null;
+    // The last valid dot hovered while the trigger was held (used as release fallback)
     private GameObject lastHoveredNewDot = null;
+    // All LineRenderer objects drawn so far in this attempt
     private List<LineRenderer> drawnLines = new List<LineRenderer>();
+    // Ordered list of dots visited in the current pattern attempt
     private List<GameObject> visitedDots = new List<GameObject>();
 
-    // Phase 2 fallback: last dot hovered while dragging
+    // Phase 2: tracks the last dot hovered while dragging, so a slightly
+    // imprecise release still registers as a valid connection
     private GameObject phase2LastHoveredTarget = null;
 
-    // Tracks whether the loop has been fully closed in Phase 3
+    // True once the participant has connected back to the first dot, closing the loop
     private bool loopClosed = false;
 
-    // How many times the full pattern has been completed
+    // Running count of how many times the participant has completed the full pattern
     private int patternCompletions = 0;
 
-    // Preview line
+
+    // A temporary line shown while the participant is dragging between dots
     private LineRenderer previewLine;
 
     // ── Start ──────────────────────────────────────────────────────────────
     void Start()
     {
+        // Add an AudioSource component to this GameObject at runtime
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
 
+        // Attempt to find the right-hand controller device
         TryGetDevice();
 
-        // Cache button material
+        // Create a unique material instance for the button so color changes
+        // don't affect all objects sharing the same material asset
         if (theButton != null)
         {
             var r = theButton.GetComponent<Renderer>();
             if (r != null) { buttonMat = new Material(r.sharedMaterial); r.material = buttonMat; }
         }
 
-        // Cache dot materials
+        // Create unique material instances for each dot for the same reason
         foreach (var dot in perimeterDots)
         {
             if (dot == null) continue;
@@ -117,7 +144,7 @@ public class DemoManager : MonoBehaviour
             if (r != null) { var m = new Material(r.sharedMaterial); r.material = m; dotMats[dot] = m; }
         }
 
-        // Preview line
+        // Create the preview line shown while dragging from dot to dot
         var previewObj = new GameObject("PreviewLine");
         previewLine = previewObj.AddComponent<LineRenderer>();
         previewLine.material = lineMaterial;
@@ -127,15 +154,22 @@ public class DemoManager : MonoBehaviour
         previewLine.endColor = Color.yellow;
         previewLine.positionCount = 2;
         previewLine.useWorldSpace = true;
+        // Default positions — updated every frame during dragging
         previewLine.SetPosition(0, Vector3.zero);
         previewLine.SetPosition(1, Vector3.forward);
-        previewLine.enabled = false;
+        previewLine.enabled = false; // Hidden until the participant starts dragging
 
+        // Reset all dots to their default color
         foreach (var dot in perimeterDots)
             SetDotColor(dot, dotDefaultColor);
 
+        // Start the tutorial at Phase 1
         GoToPhase(Phase.Phase1_MovementAndHover);
     }
+
+  
+    /// Attempts to find and cache the right-hand VR controller device.
+    /// Called once at Start and again each frame if the device is not yet valid.
 
     void TryGetDevice()
     {
@@ -148,17 +182,21 @@ public class DemoManager : MonoBehaviour
     // ── Update ─────────────────────────────────────────────────────────────
     void Update()
     {
+        // If the controller hasn't been detected yet, keep trying
         if (!rightDevice.isValid) { TryGetDevice(); return; }
 
+        // Read the trigger axis — treated as pressed if over 50% depressed
         float triggerValue = 0f;
         rightDevice.TryGetFeatureValue(CommonUsages.trigger, out triggerValue);
         bool triggerPressed = triggerValue > 0.5f;
 
+        // Cast a ray from the controller tip forward (max 10 metres)
         Ray ray = new Ray(controllerTransform.position, controllerTransform.forward);
         RaycastHit hit;
         bool didHit = Physics.Raycast(ray, out hit, 10f);
         GameObject hitObj = didHit ? hit.collider.gameObject : null;
 
+        // Delegate to the current phase's update method
         switch (currentPhase)
         {
             case Phase.Phase1_MovementAndHover: UpdatePhase1(hitObj, triggerPressed); break;
@@ -167,25 +205,34 @@ public class DemoManager : MonoBehaviour
             case Phase.Phase4_Begin:            UpdatePhase4(hitObj, triggerPressed); break;
         }
 
+        // Clear the held flag once the trigger is released
         if (!triggerPressed) isTriggerHeld = false;
     }
 
-    // ── Phase 1: Movement + Hover + Click ─────────────────────────────────
+
+    /// Phase 1: Teaches movement and controller aiming.
+    /// The participant must hover the button (changing its color) and then click it.
+    /// Advances to Phase 2 on a successful click.
+ 
     void UpdatePhase1(GameObject hitObj, bool triggerPressed)
     {
+        // Check if the ray is pointing at the button or any of its children
         bool onButton = hitObj == theButton ||
                         (hitObj != null && hitObj.transform.IsChildOf(theButton.transform));
 
         if (onButton)
         {
+            // Highlight the button to give visual feedback that it is being aimed at
             SetButtonColor(buttonHoverColor);
 
+            // Show the click instruction the first time the participant hovers the button
             if (!wasHoveringButton)
             {
                 wasHoveringButton = true;
                 SetInstruction("Great job! The button changed color.\nThat means your ray is pointing at it!\n\nNow squeeze the RIGHT trigger to click it.");
             }
 
+            // Advance to Phase 2 on a fresh trigger press while hovering
             if (triggerPressed && !isTriggerHeld)
             {
                 isTriggerHeld = true;
@@ -195,8 +242,10 @@ public class DemoManager : MonoBehaviour
         }
         else
         {
+            // Return button to default color when the ray moves away
             SetButtonColor(buttonDefaultColor);
 
+            // If they moved off the button, remind them what to do
             if (wasHoveringButton)
             {
                 wasHoveringButton = false;
@@ -205,27 +254,33 @@ public class DemoManager : MonoBehaviour
         }
     }
 
-    // ── Phase 2: Connect ANY two dots ─────────────────────────────────────
+  
+    /// Phase 2: Teaches the dot-connection mechanic using just two dots.
+    /// Participant selects one dot (trigger down), drags to another, and releases.
+    /// Advances to Phase 3 on a successful two-dot connection.
+  
     void UpdatePhase2(GameObject hitObj, bool triggerPressed)
     {
         GameObject hoveredDot = GetDot(hitObj);
 
-        // Track last valid target while dragging so a slightly-off release still works
+        // While dragging, keep track of the last valid target dot hovered.
+        // This prevents a slightly imprecise release from failing the connection.
         if (triggerPressed && isTriggerHeld && hoveredDot != null && hoveredDot != currentDot)
             phase2LastHoveredTarget = hoveredDot;
 
-        // Update colors
+        // Update dot colors to reflect hover and selection state
         foreach (var dot in perimeterDots)
         {
-            if (dot == currentDot)      SetDotColor(dot, dotSelectedColor);
-            else if (dot == hoveredDot) SetDotColor(dot, dotHoverColor);
-            else                        SetDotColor(dot, dotDefaultColor);
+            if (dot == currentDot)      SetDotColor(dot, dotSelectedColor); // Currently held dot
+            else if (dot == hoveredDot) SetDotColor(dot, dotHoverColor);    // Dot being aimed at
+            else                        SetDotColor(dot, dotDefaultColor);  // All other dots
         }
 
         if (triggerPressed)
         {
             if (!isTriggerHeld)
             {
+                // Fresh trigger press on a dot select it as the start of the connection
                 if (hoveredDot != null)
                 {
                     isTriggerHeld = true;
@@ -238,7 +293,11 @@ public class DemoManager : MonoBehaviour
             }
             else if (currentDot != null)
             {
+                // While holding trigger, update the preview line from the selected dot
+                // toward wherever the participant is pointing
                 previewLine.SetPosition(0, currentDot.transform.position);
+
+                // Prefer the currently hovered dot; fall back to the last valid one
                 GameObject previewTarget = (hoveredDot != null && hoveredDot != currentDot)
                     ? hoveredDot
                     : phase2LastHoveredTarget;
@@ -246,23 +305,27 @@ public class DemoManager : MonoBehaviour
                 if (previewTarget != null)
                     previewLine.SetPosition(1, previewTarget.transform.position);
                 else
+                    // No valid target extend the line to a point in front of the controller
                     previewLine.SetPosition(1, controllerTransform.position + controllerTransform.forward * 5f);
             }
         }
         else
         {
+            // Trigger released hide the preview line
             previewLine.enabled = false;
 
             if (isTriggerHeld && currentDot != null)
             {
                 isTriggerHeld = false;
 
+                // Resolve the release target (hovered dot or last valid fallback)
                 GameObject targetDot = (hoveredDot != null && hoveredDot != currentDot)
                     ? hoveredDot
                     : phase2LastHoveredTarget;
 
                 if (targetDot != null && targetDot != currentDot)
                 {
+                    // Valid connection draw the line and advance to Phase 3
                     DrawLine(currentDot.transform.position, targetDot.transform.position, dotCompleteColor);
                     SetDotColor(currentDot, dotCompleteColor);
                     SetDotColor(targetDot, dotCompleteColor);
@@ -272,6 +335,7 @@ public class DemoManager : MonoBehaviour
                 }
                 else
                 {
+                    // Invalid release reset and prompt the participant to try again
                     SetDotColor(currentDot, dotDefaultColor);
                     currentDot = null;
                     phase2LastHoveredTarget = null;
@@ -281,24 +345,27 @@ public class DemoManager : MonoBehaviour
         }
     }
 
-    // ── Phase 3: Connect all dots ──────────────────────────────────────────
+    /// Phase 3: Participant connects all dots in sequence, closing the loop
+    /// to complete the full pattern. Advances to Phase 4 on completion.
+
     void UpdatePhase3(GameObject hitObj, bool triggerPressed)
     {
         GameObject hoveredDot = GetDot(hitObj);
 
-        // Update colors
+        // Update dot colors to reflect visited, selected, and hover states
         foreach (var dot in perimeterDots)
         {
-            if (visitedDots.Contains(dot) && dot != currentDot) SetDotColor(dot, dotCompleteColor);
-            else if (dot == currentDot)                          SetDotColor(dot, dotSelectedColor);
-            else if (dot == hoveredDot)                          SetDotColor(dot, dotHoverColor);
-            else                                                 SetDotColor(dot, dotDefaultColor);
+            if (visitedDots.Contains(dot) && dot != currentDot) SetDotColor(dot, dotCompleteColor); // Already visited
+            else if (dot == currentDot)                          SetDotColor(dot, dotSelectedColor); // Currently held
+            else if (dot == hoveredDot)                          SetDotColor(dot, dotHoverColor);    // Being aimed at
+            else                                                 SetDotColor(dot, dotDefaultColor);  // Unvisited
         }
 
         if (triggerPressed)
         {
             if (!isTriggerHeld)
             {
+                // Fresh trigger press on an unvisited dot — select it as the next connection point
                 if (hoveredDot != null && !visitedDots.Contains(hoveredDot))
                 {
                     isTriggerHeld = true;
@@ -310,21 +377,27 @@ public class DemoManager : MonoBehaviour
             }
             else if (currentDot != null)
             {
+                // Check if the participant is hovering the first dot to close the loop
                 bool closingLoop = hoveredDot != null && hoveredDot != currentDot
                     && visitedDots.Count >= perimeterDots.Length - 1
                     && hoveredDot == visitedDots[0];
+
+                // Check if they are hovering a new, unvisited dot
                 bool newDot = hoveredDot != null && hoveredDot != currentDot
                     && !visitedDots.Contains(hoveredDot);
 
+                // Change preview line color to green when about to close the loop
                 previewLine.startColor = closingLoop ? dotCompleteColor : Color.yellow;
                 previewLine.endColor   = closingLoop ? dotCompleteColor : Color.yellow;
 
+                // Update preview line endpoints
                 previewLine.SetPosition(0, currentDot.transform.position);
                 if (newDot || closingLoop)
                     previewLine.SetPosition(1, hoveredDot.transform.position);
                 else
                     previewLine.SetPosition(1, controllerTransform.position + controllerTransform.forward * 5f);
 
+                // If hovering a valid next dot or the closing dot, snap the drawn line to it in real time
                 if (newDot || closingLoop)
                 {
                     lastHoveredNewDot = hoveredDot;
@@ -339,6 +412,7 @@ public class DemoManager : MonoBehaviour
                     }
                     else
                     {
+                        // Continue to the next dot
                         if (!visitedDots.Contains(currentDot))
                             visitedDots.Add(currentDot);
                         SetDotColor(currentDot, dotSelectedColor);
@@ -349,6 +423,7 @@ public class DemoManager : MonoBehaviour
         }
         else
         {
+            // Trigger released hide the preview line and reset its color
             previewLine.enabled = false;
             previewLine.startColor = Color.yellow;
             previewLine.endColor   = Color.yellow;
@@ -359,6 +434,7 @@ public class DemoManager : MonoBehaviour
 
                 if (loopClosed)
                 {
+                    // Pattern successfully completed colour all dots and lines green
                     loopClosed = false;
                     patternCompletions++;
 
@@ -374,6 +450,8 @@ public class DemoManager : MonoBehaviour
                 }
                 else
                 {
+                    // Trigger released mid-pattern try to finalize the last connection
+                    // using the release position or the last valid dot hovered
                     GameObject releaseDot = hoveredDot != null ? hoveredDot : lastHoveredNewDot;
                     bool canClose = releaseDot != null && releaseDot != currentDot && currentDot != null
                         && ((!visitedDots.Contains(releaseDot))
@@ -400,7 +478,10 @@ public class DemoManager : MonoBehaviour
         }
     }
 
-    // ── Phase 4: Begin Experiment (pattern resets on each completion) ──────
+    /// Phase 4: Participant may practice the full pattern as many times as desired.
+    /// Clicking "Begin Experiment" loads the main experiment scene.
+    /// Touching any dot resets the board and drops back into Phase 3 for another practice round.
+
     void UpdatePhase4(GameObject hitObj, bool triggerPressed)
     {
         bool onButton = hitObj == theButton ||
@@ -412,6 +493,7 @@ public class DemoManager : MonoBehaviour
             if (triggerPressed && !isTriggerHeld)
             {
                 isTriggerHeld = true;
+                // Load the main experiment scene
                 SceneManager.LoadScene(experimentSceneName);
             }
         }
@@ -420,7 +502,7 @@ public class DemoManager : MonoBehaviour
             SetButtonColor(buttonDefaultColor);
         }
 
-        // If the player grabs a dot, reset the board and drop back into Phase 3
+        // If the participant touches a dot, reset the board and start another practice round
         GameObject hoveredDot = GetDot(hitObj);
         if (triggerPressed && !isTriggerHeld && hoveredDot != null)
         {
@@ -434,7 +516,9 @@ public class DemoManager : MonoBehaviour
         }
     }
 
-    // ── Helpers for Phase 4 practice reset ────────────────────────────────
+    /// Clears all drawn lines and resets dot state so the participant
+    /// can practice the full pattern again from scratch.
+
     void ResetPatternForPractice()
     {
         foreach (var line in drawnLines)
@@ -448,7 +532,9 @@ public class DemoManager : MonoBehaviour
             SetDotColor(dot, dotDefaultColor);
     }
 
-    // ── Phase transitions ──────────────────────────────────────────────────
+    /// Transitions to a new phase, resetting shared input state,
+    /// updating the button and instructions, and triggering audio.
+
     void GoToPhase(Phase phase)
     {
         currentPhase = phase;
@@ -456,8 +542,8 @@ public class DemoManager : MonoBehaviour
         wasHoveringButton = false;
         loopClosed = false;
 
-        // Cancel any pending audio coroutine so phase transitions don't
-        // accidentally play the wrong clip
+        // Stop any pending audio coroutine to prevent the wrong clip playing
+        // if the participant advances phases quickly
         StopAllCoroutines();
 
         switch (phase)
@@ -472,6 +558,7 @@ public class DemoManager : MonoBehaviour
 
             case Phase.Phase2_DotPractice:
                 theButton.SetActive(false);
+                // Reset all dots to default for the practice phase
                 foreach (var dot in perimeterDots)
                     SetDotColor(dot, dotDefaultColor);
                 currentDot = null;
@@ -482,6 +569,7 @@ public class DemoManager : MonoBehaviour
 
             case Phase.Phase3_FullPattern:
                 theButton.SetActive(false);
+                // Destroy all previously drawn lines and reset dot/visit state
                 foreach (var line in drawnLines)
                     Destroy(line.gameObject);
                 drawnLines.Clear();
@@ -498,6 +586,7 @@ public class DemoManager : MonoBehaviour
                 theButton.SetActive(true);
                 SetButtonLabel("Begin Experiment");
                 SetButtonColor(buttonDefaultColor);
+                // Show different instruction text depending on how many times the pattern has been completed
                 if (patternCompletions == 1)
                     SetInstruction("Amazing! You completed the pattern!\n\nFeel free to practice again — just grab a dot!\nWhen you are ready, click the button\nto begin the experiment.");
                 else
@@ -507,22 +596,29 @@ public class DemoManager : MonoBehaviour
         }
     }
 
-    // ── Audio ──────────────────────────────────────────────────────────────
-void PlayAudioDelayed(AudioClip clip)
-{
-    if (clip != null && audioSource != null)
+
+    /// Plays an audio clip immediately if one is assigned.
+    /// Stops any currently playing clip first to avoid overlap.
+
+    void PlayAudioDelayed(AudioClip clip)
     {
-        audioSource.Stop();
-        audioSource.clip = clip;
-        audioSource.Play();
+        if (clip != null && audioSource != null)
+        {
+            audioSource.Stop();
+            audioSource.clip = clip;
+            audioSource.Play();
+        }
     }
-}
+
+    
+    /// Coroutine that waits audioDelay seconds before playing a clip.
+    /// Kept for reference currently unused since PlayAudioDelayed plays immediately.
+  
     IEnumerator AudioDelayCoroutine(AudioClip clip)
     {
         yield return new WaitForSeconds(audioDelay);
 
-        // Only play if the clip is still relevant (coroutines are stopped on
-        // phase change so this is just a safety net)
+        // Safety check in case the phase changed before the delay elapsed
         if (audioSource != null && clip != null)
         {
             audioSource.Stop();
@@ -531,24 +627,28 @@ void PlayAudioDelayed(AudioClip clip)
         }
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────
+    //Sets the text on the button label.</summary>
     void SetButtonLabel(string text)
     {
         if (buttonLabel != null) buttonLabel.text = text;
     }
 
+    /// Sets the color of the button's cached material instance.</summary>
     void SetButtonColor(Color color)
     {
         if (buttonMat != null) buttonMat.color = color;
     }
 
+    /// <summary>Sets the color of a dot's cached material instance.</summary>
     void SetDotColor(GameObject dot, Color color)
     {
         if (dot == null) return;
         if (dotMats.TryGetValue(dot, out Material m)) m.color = color;
     }
 
-    GameObject GetDot(GameObject obj)
+    /// Returns the dot GameObject that the given hitObj belongs to,
+    /// or null if the hit object is not a dot or a child of one.
+       GameObject GetDot(GameObject obj)
     {
         if (obj == null) return null;
         foreach (var dot in perimeterDots)
@@ -556,6 +656,10 @@ void PlayAudioDelayed(AudioClip clip)
                 return dot;
         return null;
     }
+
+
+    /// Creates a new LineRenderer between two world-space positions
+    /// and adds it to the drawnLines list so it can be cleared later.
 
     void DrawLine(Vector3 start, Vector3 end, Color color)
     {
@@ -573,6 +677,9 @@ void PlayAudioDelayed(AudioClip clip)
         drawnLines.Add(lr);
     }
 
+
+    /// Updates the on-screen instruction text and logs it to the Unity console.
+  
     void SetInstruction(string text)
     {
         if (instructionDisplay != null) instructionDisplay.text = text;
